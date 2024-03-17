@@ -6,6 +6,7 @@
     <RootNamespace>sk_dotnet_demo</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>*</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
