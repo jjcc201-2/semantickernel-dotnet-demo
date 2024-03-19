@@ -2,7 +2,6 @@ using System.ComponentModel;
 using Microsoft.SemanticKernel;
 
 namespace Plugins;
-
 public class LightPlugin
 {
     public bool IsOn { get; set;} = false;

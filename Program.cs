@@ -8,7 +8,10 @@ using Plugins;
 var builder = Kernel.CreateBuilder();
 
 // Adding the custom LightPlugin to the kernel
+
+builder.Plugins.AddFromType<ProductPlugin>();
 builder.Plugins.AddFromType<LightPlugin>();
+
 
 // Configure AI service credentials used by the kernel
 var (useAzureOpenAI, model, azureEndpoint, apiKey, orgId) = Settings.LoadFromFile();
