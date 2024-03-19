@@ -1,9 +1,14 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Microsoft.SemanticKernel.TemplateEngine;
 using Kernel = Microsoft.SemanticKernel.Kernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+
+using Plugins;
 
 var builder = Kernel.CreateBuilder();
+
+// Adding the custom LightPlugin to the kernel
+builder.Plugins.AddFromType<LightPlugin>();
 
 // Configure AI service credentials used by the kernel
 var (useAzureOpenAI, model, azureEndpoint, apiKey, orgId) = Settings.LoadFromFile();
@@ -16,51 +21,55 @@ else
 
 var kernel = builder.Build();
 
+ChatHistory history = new();
 
-// Example of an in-line semantic function
-const string skPrompt = @"
-ChatBot can have a conversation with you about any topic.
-The ChatBot will be able to answer questions, give advice, and carry on a conversation.
-The ChatBot will provide every response as a pirate. 
-The ChatBot will also constantly remind you that it really thinks you should stay hydrated.
-It can give explicit instructions or say 'I don't know' if it does not have an answer.
+var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
 
 
-{{$history}}
-User: {{$userInput}}
-ChatBot:";
 
-var executionSettings = new OpenAIPromptExecutionSettings 
-{
-    MaxTokens = 2000, // Defines the maximum number of tokens to generate
-    Temperature = 0.7, // Defines the creativity and risk of answer. 0 is the most conservative & 1 is the most creative
-    TopP = 0.5 // Another sampling parameter that can be used to control what tokens are considered when generating responses
-};
+// Start the conversation
+Console.Write("User > ");
 
-var chatFunction = kernel.CreateFunctionFromPrompt(skPrompt, executionSettings);
-
-var history = "";
-var arguments = new KernelArguments()
-{
-    ["history"] = history
-};
-
-
-// Keep the conversation going on for eternity
 while (true)
 {
-    Console.Write("You: ");
     var userInput = Console.ReadLine();
 
-    // Add the user input to the arguments
-    arguments["userInput"] = userInput;
+    // Add the message from the agent to the chat history
+    history.AddUserMessage(userInput);
 
-    // Get the bot's answer by invoking the chat function
-    var bot_answer = await chatFunction.InvokeAsync(kernel, arguments);
+    // Enable auto function calling
+    OpenAIPromptExecutionSettings settings = new()
+    {
+        ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+    };
 
-    // Add the bot's answer to the history
-    history += $"\nUser: {userInput}\nAI: {bot_answer}\n";
-    arguments["history"] = history;
+    
+    // Get the response from the AI
+    var result = chatCompletionService.GetStreamingChatMessageContentsAsync(
+                        history,
+                        executionSettings: settings,
+                        kernel: kernel);
 
-    Console.WriteLine(history);
+    // Stream the results 
+    string fullMessage = "";
+    var first = true;
+
+    await foreach (var content in result)
+    {
+        if (content.Role.HasValue && first)
+        {
+            Console.Write("Assistant > ");
+            first = false;
+        }
+        // Write the content of the result to the console
+        Console.Write(content.Content);
+        // Add the content of the result to the full message
+        fullMessage += content.Content;
+    }
+    Console.WriteLine("\n");
+    // Add the message from the agent to the chat history
+
+    history.AddAssistantMessage(fullMessage);
+
+    Console.Write("User > ");
 }
