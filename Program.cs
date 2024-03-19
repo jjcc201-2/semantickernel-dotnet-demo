@@ -7,11 +7,9 @@ using Plugins;
 
 var builder = Kernel.CreateBuilder();
 
-// Adding the custom LightPlugin to the kernel
-
+// Adding the native plugins to the kernel to expose the functions to the AI
 builder.Plugins.AddFromType<ProductPlugin>();
 builder.Plugins.AddFromType<LightPlugin>();
-
 
 // Configure AI service credentials used by the kernel
 var (useAzureOpenAI, model, azureEndpoint, apiKey, orgId) = Settings.LoadFromFile();
@@ -38,6 +36,7 @@ while (true)
     var userInput = Console.ReadLine();
 
     // Add the message from the agent to the chat history
+    #pragma warning disable CS8604
     history.AddUserMessage(userInput);
 
     // Enable auto function calling

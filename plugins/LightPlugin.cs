@@ -15,8 +15,7 @@ public class LightPlugin
     public string TurnOn()
     {
         IsOn = true;
-
-        //Console.ForegroundColor = ConsoleColor.Yellow;
+        
         Console.BackgroundColor = ConsoleColor.Yellow;
 
         return "on";

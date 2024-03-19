@@ -15,6 +15,7 @@ public static class Settings
     private const string SecretKey = "apikey";
     private const string OrgKey = "org";
     private const bool StoreConfigOnFile = true;
+    private const string Url = "url"; // URL used for Product API 
 
 
 
@@ -31,6 +32,7 @@ public static class Settings
         try
         {
             var config = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(configFile));
+            #pragma warning disable CS8602
             bool useAzureOpenAI = config[TypeKey] == "azure";
             string model = config[ModelKey];
             string azureEndpoint = config[EndpointKey];
@@ -46,6 +48,31 @@ public static class Settings
             return (true, "", "", "", "");
         }
     }
+
+    public static string LoadUrlFromFile(string configFile = DefaultConfigFile)
+    {
+        if (!File.Exists(configFile))
+        {
+            Console.WriteLine("Configuration not found: " + configFile);
+            throw new Exception("Configuration not found, please setup your settings.json file. Use the example provided");
+        }
+
+        try
+        {
+            var config = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(configFile));
+            string url = config[Url];
+            return (url);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Something went wrong: " + e.Message);
+            return ("");
+        }
+    }
+
+
+
+
 
     // Delete settings file
     public static void Reset(string configFile = DefaultConfigFile)
@@ -139,4 +166,5 @@ public static class Settings
             }
         }
     }
+
 }
